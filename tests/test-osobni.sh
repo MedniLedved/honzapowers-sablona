@@ -83,6 +83,7 @@ printf '%s' "$out" | python3 -I -c 'import sys,json;b=sys.stdin.buffer.read();js
 echo "Skutečné pravidla.md v repu se vejde do limitu (hook je neořízne)"
 d="$(mktemp -d)"; mkdir -p "$d/hooks"
 sed 's/^MAX_CHARS=800/MAX_CHARS=100000/' "$ROOT/hooks/session-start" >"$d/hooks/session-start"
+cmp -s "$ROOT/hooks/session-start" "$d/hooks/session-start" && fail "MAX_CHARS=800 v hooku nenalezeno, test by neměřil limit"
 cp "$ROOT/pravidla.md" "$d/pravidla.md"
 out="$(bash "$d/hooks/session-start" </dev/null)"
 if [ -z "$out" ]; then pass "pravidla.md bez textu (vzor)"; else

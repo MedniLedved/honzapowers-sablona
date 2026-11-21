@@ -29,7 +29,7 @@ jobs:
           echo {} > "%RUNNER_TEMP%\in.json"
           call hooks\run-hook.cmd session-start < "%RUNNER_TEMP%\in.json" > "%RUNNER_TEMP%\out.txt"
           if errorlevel 1 exit /b 1
-          node -e "const t=require('fs').readFileSync(process.argv[1],'utf8');if(t.trim()==='')process.exit(0);const c=JSON.parse(t).hookSpecificOutput.additionalContext;if(!c.startsWith('Personal rules (honzapowers-osobni):'))process.exit(1)" "%RUNNER_TEMP%\out.txt"
+          node -e "const t=require('fs').readFileSync(process.argv[1],'utf8');if(t==='')process.exit(0);const c=JSON.parse(t).hookSpecificOutput.additionalContext;if(!c.startsWith('Personal rules (honzapowers-osobni):'))process.exit(1)" "%RUNNER_TEMP%\out.txt"
           if errorlevel 1 exit /b 1
           echo PASS cmd wrapper (prazdny vystup nebo blok Personal rules)
 
