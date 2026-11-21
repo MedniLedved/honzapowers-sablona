@@ -4,7 +4,8 @@
 # ignored; if nothing else is left, nothing is injected. Read-only, no network,
 # always exits 0.
 set -u
-export LC_ALL=C
+export LC_ALL="${HONZAPOWERS_OSOBNI_LOCALE:-C.UTF-8}"
+probe="ž"   # 1 character in a UTF-8 locale, 2 bytes otherwise
 trap 'exit 0' EXIT
 
 MAX_CHARS=800
@@ -16,16 +17,31 @@ body=""
 in_comment=0
 while IFS= read -r line || [ -n "$line" ]; do
   line="${line%$'\r'}"
-  if [ "$in_comment" -eq 1 ]; then
-    case "$line" in *'-->'*) in_comment=0 ;; esac
-    continue
-  fi
-  case "$line" in
-    *'<!--'*)
-      case "$line" in *'-->'*) ;; *) in_comment=1 ;; esac
-      continue
-      ;;
-  esac
+  touched=0
+  while :; do
+    if [ "$in_comment" -eq 1 ]; then
+      touched=1
+      case "$line" in
+        *'-->'*) line="${line#*-->}"; in_comment=0 ;;
+        *) line=""; break ;;
+      esac
+    else
+      case "$line" in
+        *'<!--'*)
+          touched=1
+          pre="${line%%<!--*}"
+          rest="${line#*<!--}"
+          case "$rest" in
+            *'-->'*) line="$pre${rest#*-->}" ;;
+            *) line="$pre"; in_comment=1; break ;;
+          esac
+          ;;
+        *) break ;;
+      esac
+    fi
+  done
+  # a line that held only comment text leaves nothing behind
+  if [ "$touched" -eq 1 ] && [ -z "${line//[[:space:]]/}" ]; then continue; fi
   body+="$line"$'\n'
 done <"$FILE"
 
@@ -33,7 +49,22 @@ done <"$FILE"
 body="${body#"${body%%[![:space:]]*}"}"
 body="${body%"${body##*[![:space:]]}"}"
 [ -n "$body" ] || exit 0
-body="${body:0:$MAX_CHARS}"
+
+# Limit in characters. With a UTF-8 locale ${#body} counts characters; in a
+# byte locale the cut could split a multibyte character, so drop the partial tail.
+if [ "${#body}" -gt "$MAX_CHARS" ]; then
+  body="${body:0:$MAX_CHARS}"
+  if [ "${#probe}" -ne 1 ]; then
+    while [ -n "$body" ]; do
+      last="${body: -1}"
+      case "$last" in
+        [$'\200'-$'\277']) body="${body%?}" ;;                 # continuation byte
+        [$'\300'-$'\377']) body="${body%?}"; break ;;          # orphaned lead byte
+        *) break ;;
+      esac
+    done
+  fi
+fi
 
 context="Personal rules (honzapowers-osobni):"$'\n'"$body"
 

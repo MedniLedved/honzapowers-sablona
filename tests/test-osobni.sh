@@ -37,15 +37,51 @@ if command -v python3 >/dev/null 2>&1; then
   printf '%s' "$out" | python3 -I -c 'import json,sys;json.load(sys.stdin)' && pass "platný JSON" || fail "neplatný JSON"
 fi
 
-echo "Limit 800 znaků"
-python3 -I -c 'print("x" * 900)' >"$T/long.md" 2>/dev/null || printf 'x%.0s' $(seq 1 900) >"$T/long.md"
+echo "Komentář na řádku s pravidlem: pravidlo zůstane"
+printf 'M1 pravidlo <!-- pozn --> dál\n<!-- celý řádek -->\nM2 před <!-- začátek\nskryto\nkonec --> za\n' >"$T/inline.md"
+out="$(run_hook "$T/inline.md")"
+case "$out" in *'M1 pravidlo  dál'*) pass "text před i za komentářem" ;; *) fail "inline komentář: $out" ;; esac
+case "$out" in *'M2 před \n za'*) pass "komentář přes řádky uprostřed řádku" ;; *) fail "víceřádkový inline: $out" ;; esac
+case "$out" in *pozn* | *skryto* | *'celý řádek'*) fail "komentář prosákl" ;; *) pass "text komentáře nevložen" ;; esac
+
+echo "Nezavřený komentář skryje zbytek souboru, hook skončí kódem 0"
+printf 'M1 viditelné\n<!-- nezavřeno\nM2 skryté\n' >"$T/open.md"
+out="$(run_hook "$T/open.md")"
+case "$out" in *'M1 viditelné'*) pass "text před komentářem" ;; *) fail "chybí M1: $out" ;; esac
+case "$out" in *'M2 skryté'*) fail "skryté prosáklo" ;; *) pass "zbytek za nezavřeným komentářem skryt" ;; esac
+
+echo "CRLF soubor"
+printf 'M1 crlf\r\n<!-- k -->\r\nM2 crlf\r\n' >"$T/crlf.md"
+out="$(run_hook "$T/crlf.md")"
+case "$out" in *'\r'*) fail "CR zůstalo ve výstupu" ;; *) pass "CR odstraněno" ;; esac
+case "$out" in *'M1 crlf\nM2 crlf'*) pass "řádky spojeny přes \\n" ;; *) fail "CRLF: $out" ;; esac
+
+echo "Chybějící pravidla.md: žádný výstup, kód 0"
+d="$(mktemp -d)"; mkdir -p "$d/hooks"; cp "$ROOT/hooks/session-start" "$d/hooks/"
+out="$(bash "$d/hooks/session-start" </dev/null)"; rc=$?
+[ -z "$out" ] && [ "$rc" -eq 0 ] && pass "bez souboru: prázdno, kód 0" || fail "bez souboru: rc=$rc out=$out"
+rm -rf "$d"
+
+echo "Limit 800 znaků (ASCII)"
+printf 'x%.0s' $(seq 1 900) >"$T/long.md"
 out="$(run_hook "$T/long.md")"
 n="$(printf '%s' "$out" | grep -o 'x\{10,\}' | head -1 | tr -d '\n' | wc -c | tr -d ' ')"
-[ "$n" -eq 800 ] && pass "hook ořízne na 800 ($n)" || fail "očekáváno 800 x, je $n"
+[ "$n" -eq 800 ] && pass "ořez na 800 ($n)" || fail "očekáváno 800 x, je $n"
 
-echo "Soubor pravidla.md v repu respektuje limit"
-chars="$(awk 'BEGIN{c=0} /<!--/{if($0!~/-->/)c=1;next} c&&/-->/{c=0;next} c{next} {printf "%s\n",$0}' "$ROOT/pravidla.md" | wc -c | tr -d ' ')"
-[ "$chars" -le 800 ] && pass "pravidla.md: $chars ≤ 800" || fail "pravidla.md má $chars znaků (limit 800)"
+echo "Limit 800 znaků (čeština, UTF-8)"
+python3 -I -c 'print("a" + "ž" * 900)' >"$T/cz.md"
+out="$(run_hook "$T/cz.md")"
+chars="$(printf '%s' "$out" | python3 -I -c 'import sys,json;print(len(json.load(sys.stdin)["hookSpecificOutput"]["additionalContext"].split("\n",1)[1]))' 2>&1)"
+[ "$chars" = "800" ] && pass "800 znaků, platné UTF-8 a JSON" || fail "čeština: $chars"
+
+echo "Bajtový locale: ořez nepřeřízne znak"
+out="$(HONZAPOWERS_OSOBNI_LOCALE=C run_hook "$T/cz.md")"
+printf '%s' "$out" | python3 -I -c 'import sys,json;b=sys.stdin.buffer.read();json.loads(b.decode("utf-8"))' 2>/dev/null \
+  && pass "výstup je platné UTF-8 i v bajtovém locale" || fail "rozbité UTF-8 v bajtovém locale"
+
+echo "Šablona pravidla.md v repu: vložený text je v limitu"
+out="$(run_hook "$ROOT/pravidla.md")"
+[ -z "$out" ] && pass "vzor nic nevkládá" || fail "vzor vložil text"
 
 echo "Verze v plugin.json a marketplace.json se shoduje"
 v1="$(grep -o '"version": *"[^"]*"' "$ROOT/.claude-plugin/plugin.json" | head -1 | grep -o '[0-9][0-9.]*')"

@@ -29,7 +29,8 @@ jobs:
           echo {} > "%RUNNER_TEMP%\in.json"
           call hooks\run-hook.cmd session-start < "%RUNNER_TEMP%\in.json" > "%RUNNER_TEMP%\out.txt"
           if errorlevel 1 exit /b 1
-          echo PASS cmd wrapper (prázdný vzor, žádný výstup)
+          for %%A in ("%RUNNER_TEMP%\out.txt") do if %%~zA neq 0 (echo FAIL: neprazdny vystup & exit /b 1)
+          echo PASS cmd wrapper (prazdny vzor, prazdny vystup)
 
   validate:
     runs-on: ubuntu-latest
