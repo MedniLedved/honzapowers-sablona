@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# SessionStart hook for honzapowers-osobni.
+# Injects pravidla.md under a fixed heading. HTML comments (<!-- ... -->) are
+# ignored; if nothing else is left, nothing is injected. Read-only, no network,
+# always exits 0.
+set -u
+export LC_ALL=C
+trap 'exit 0' EXIT
+
+MAX_CHARS=800
+SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+FILE="${SCRIPT_DIR%/*}/pravidla.md"
+[ -f "$FILE" ] || exit 0
+
+body=""
+in_comment=0
+while IFS= read -r line || [ -n "$line" ]; do
+  line="${line%$'\r'}"
+  if [ "$in_comment" -eq 1 ]; then
+    case "$line" in *'-->'*) in_comment=0 ;; esac
+    continue
+  fi
+  case "$line" in
+    *'<!--'*)
+      case "$line" in *'-->'*) ;; *) in_comment=1 ;; esac
+      continue
+      ;;
+  esac
+  body+="$line"$'\n'
+done <"$FILE"
+
+# trim surrounding whitespace
+body="${body#"${body%%[![:space:]]*}"}"
+body="${body%"${body##*[![:space:]]}"}"
+[ -n "$body" ] || exit 0
+body="${body:0:$MAX_CHARS}"
+
+context="Personal rules (honzapowers-osobni):"$'\n'"$body"
+
+s="$context"
+s="${s//\\/\\\\}"
+s="${s//\"/\\\"}"
+s="${s//$'\n'/\\n}"
+s="${s//$'\t'/\\t}"
+s="${s//[$'\001'-$'\037']/}"
+printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$s"
+exit 0

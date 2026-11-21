@@ -1,0 +1,9 @@
+{
+  "name": "honzapowers-osobni",
+  "description": "Personal rules layer for honzapowers: injects your own short rules file (pravidla.md) at session start.",
+  "version": "0.1.0",
+  "author": {
+    "name": "MedniLedved"
+  },
+  "keywords": ["workflow", "personal", "rules"]
+}

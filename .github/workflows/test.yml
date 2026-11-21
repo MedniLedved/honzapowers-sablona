@@ -1,0 +1,43 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  hooks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Testy hooku (bash)
+        shell: bash
+        run: bash tests/run-tests.sh
+
+      - name: Wrapper přes cmd.exe (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          echo {} > "%RUNNER_TEMP%\in.json"
+          call hooks\run-hook.cmd session-start < "%RUNNER_TEMP%\in.json" > "%RUNNER_TEMP%\out.txt"
+          if errorlevel 1 exit /b 1
+          echo PASS cmd wrapper (prázdný vzor, žádný výstup)
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code@2.1.321
+      - name: Validate plugin and marketplace
+        run: |
+          claude plugin validate --strict .
+          claude plugin validate --strict .claude-plugin/marketplace.json
