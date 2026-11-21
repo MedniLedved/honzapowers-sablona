@@ -18,7 +18,8 @@ run_hook() { # $1 = soubor pravidla.md; kopie pluginu v tmp
 T="$(mktemp -d)"
 
 echo "Vzor ze šablony (jen komentář) nevloží nic"
-out="$(run_hook "$ROOT/pravidla.md")"
+printf '<!--\nvzor jen s komentářem\n-->\n' >"$T/vzor.md"
+out="$(run_hook "$T/vzor.md")"
 [ -z "$out" ] && pass "prázdný vzor ⇒ žádný výstup" || fail "vzor vložil: $out"
 
 echo "Prázdný soubor nevloží nic"
@@ -79,9 +80,16 @@ out="$(HONZAPOWERS_OSOBNI_LOCALE=C run_hook "$T/cz.md")"
 printf '%s' "$out" | python3 -I -c 'import sys,json;b=sys.stdin.buffer.read();json.loads(b.decode("utf-8"))' 2>/dev/null \
   && pass "výstup je platné UTF-8 i v bajtovém locale" || fail "rozbité UTF-8 v bajtovém locale"
 
-echo "Šablona pravidla.md v repu: vložený text je v limitu"
-out="$(run_hook "$ROOT/pravidla.md")"
-[ -z "$out" ] && pass "vzor nic nevkládá" || fail "vzor vložil text"
+echo "Skutečné pravidla.md v repu se vejde do limitu (hook je neořízne)"
+d="$(mktemp -d)"; mkdir -p "$d/hooks"
+sed 's/^MAX_CHARS=800/MAX_CHARS=100000/' "$ROOT/hooks/session-start" >"$d/hooks/session-start"
+cp "$ROOT/pravidla.md" "$d/pravidla.md"
+out="$(bash "$d/hooks/session-start" </dev/null)"
+if [ -z "$out" ]; then pass "pravidla.md bez textu (vzor)"; else
+  n="$(printf '%s' "$out" | python3 -I -c 'import sys,json;print(len(json.load(sys.stdin)["hookSpecificOutput"]["additionalContext"].split("\n",1)[1]))' 2>/dev/null)"
+  [ -n "$n" ] && [ "$n" -le 800 ] && pass "pravidla.md: $n ≤ 800 znaků" || fail "pravidla.md má '$n' znaků (limit 800)"
+fi
+rm -rf "$d"
 
 echo "Verze v plugin.json a marketplace.json se shoduje"
 v1="$(grep -o '"version": *"[^"]*"' "$ROOT/.claude-plugin/plugin.json" | head -1 | grep -o '[0-9][0-9.]*')"
