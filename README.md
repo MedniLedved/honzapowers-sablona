@@ -4,7 +4,7 @@ Osobní vrstva k pluginu [honzapowers](https://github.com/MedniLedved/honzapower
 
 ## Jak ji použít
 1. Na GitHubu klikni na **Use this template** → **Create a new repository**. Nastav **Private**.
-2. V novém repu otevři `pravidla.md`, smaž komentář a napiš vlastní pravidla (jedno na řádek). Limit je **800 znaků** mimo komentáře. V `.claude-plugin/plugin.json` a `marketplace.json` přepiš jméno autora na své.
+2. V novém repu otevři `pravidla.md`, smaž komentář a napiš vlastní pravidla (jedno na řádek). Limit je **800 znaků** mimo komentáře `<!-- … -->` (komentář může být i na řádku s pravidlem, text mimo něj se zachová). V `.claude-plugin/plugin.json` a `marketplace.json` přepiš jméno autora na své.
 3. Na claude.ai: Customize → Plugins → Add → **Add marketplace** → tvoje nové repo, zapni **Sync automatically** a povol `honzapowers-osobni`.
 4. Nové session pak začnou blokem `Personal rules (honzapowers-osobni):` s tvými pravidly.
 
