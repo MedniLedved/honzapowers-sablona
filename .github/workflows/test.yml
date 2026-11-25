@@ -1,15 +1,19 @@
 name: test
 
+# Testy běží jen ve zdrojové šabloně. V repu vytvořeném přes „Use this template“
+# se joby přeskočí, takže nespotřebují minuty GitHub Actions.
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   hooks:
+    if: github.repository == 'MedniLedved/honzapowers-sablona'
     strategy:
       fail-fast: false
       matrix:
@@ -34,6 +38,7 @@ jobs:
           echo PASS cmd wrapper (prazdny vystup nebo blok Personal rules)
 
   validate:
+    if: github.repository == 'MedniLedved/honzapowers-sablona'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

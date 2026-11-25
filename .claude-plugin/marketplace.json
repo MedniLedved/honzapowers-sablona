@@ -2,7 +2,7 @@
   "name": "honzapowers-osobni",
   "description": "Personal rules layer for honzapowers",
   "owner": {
-    "name": "MedniLedved"
+    "name": "TVOJE-JMENO"
   },
   "plugins": [
     {
@@ -11,7 +11,7 @@
       "version": "0.1.0",
       "source": "./",
       "author": {
-        "name": "MedniLedved"
+        "name": "TVOJE-JMENO"
       }
     }
   ]
