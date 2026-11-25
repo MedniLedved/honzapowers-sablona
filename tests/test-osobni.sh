@@ -105,7 +105,7 @@ else pass "manifesty bez jména autora šablony"; fi
 WF="$ROOT/.github/workflows/test.yml"
 if [ ! -f "$WF" ]; then pass "CI workflow smazaný (povoleno)"; else
   jobs="$(awk '/^jobs:/{j=1;next} /^[^ ]/{j=0} j && /^  [a-z][a-z0-9_-]*:$/' "$WF" | wc -l | tr -d ' ')"
-  guards="$(grep -c "if: github.repository == 'MedniLedved/honzapowers-sablona'" "$WF")"
+  guards="$(grep -cE "^[[:space:]]+if: github.repository == 'MedniLedved/honzapowers-sablona'" "$WF")"
   [ "$jobs" -gt 0 ] && [ "$jobs" = "$guards" ] && pass "CI běží jen ve zdrojovém repu ($guards/$jobs jobů)" \
     || fail "CI: $guards z $jobs jobů má podmínku na zdrojové repo"
 fi
