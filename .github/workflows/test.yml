@@ -20,7 +20,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Testy hooku (bash)
         shell: bash
@@ -41,7 +41,7 @@ jobs:
     if: github.repository == 'MedniLedved/honzapowers-sablona'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code@2.1.321
       - name: Validate plugin and marketplace
