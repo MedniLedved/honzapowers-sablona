@@ -1,22 +1,26 @@
 name: test
 
+# Testy běží jen ve zdrojové šabloně. V repu vytvořeném přes „Use this template“
+# se joby přeskočí, takže nespotřebují minuty GitHub Actions.
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   hooks:
+    if: github.repository == 'MedniLedved/honzapowers-sablona'
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Testy hooku (bash)
         shell: bash
@@ -34,9 +38,10 @@ jobs:
           echo PASS cmd wrapper (prazdny vystup nebo blok Personal rules)
 
   validate:
+    if: github.repository == 'MedniLedved/honzapowers-sablona'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code@2.1.321
       - name: Validate plugin and marketplace

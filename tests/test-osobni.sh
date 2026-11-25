@@ -97,6 +97,19 @@ v1="$(grep -o '"version": *"[^"]*"' "$ROOT/.claude-plugin/plugin.json" | head -1
 v2="$(grep -o '"version": *"[^"]*"' "$ROOT/.claude-plugin/marketplace.json" | head -1 | grep -o '[0-9][0-9.]*')"
 [ -n "$v1" ] && [ "$v1" = "$v2" ] && pass "verze $v1" || fail "verze: '$v1' vs '$v2'"
 
+echo "Šablona je připravená ke sdílení"
+grep -q '^MIT License' "$ROOT/LICENSE" 2>/dev/null && pass "LICENSE: MIT" || fail "LICENSE chybí nebo není MIT"
+if grep -q 'MedniLedved' "$ROOT/.claude-plugin/plugin.json" "$ROOT/.claude-plugin/marketplace.json"; then
+  fail "manifesty obsahují jméno autora šablony (má tam být TVOJE-JMENO)"
+else pass "manifesty bez jména autora šablony"; fi
+WF="$ROOT/.github/workflows/test.yml"
+if [ ! -f "$WF" ]; then pass "CI workflow smazaný (povoleno)"; else
+  jobs="$(awk '/^jobs:/{j=1;next} /^[^ ]/{j=0} j && /^  [a-z][a-z0-9_-]*:$/' "$WF" | wc -l | tr -d ' ')"
+  guards="$(grep -c "if: github.repository == 'MedniLedved/honzapowers-sablona'" "$WF")"
+  [ "$jobs" -gt 0 ] && [ "$jobs" = "$guards" ] && pass "CI běží jen ve zdrojovém repu ($guards/$jobs jobů)" \
+    || fail "CI: $guards z $jobs jobů má podmínku na zdrojové repo"
+fi
+
 rm -rf "$T"
 echo
 [ "$fails" -eq 0 ] && echo "osobni: ALL PASS" || echo "osobni: $fails failed"

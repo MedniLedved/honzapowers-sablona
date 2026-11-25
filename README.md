@@ -4,11 +4,13 @@ Osobní vrstva k pluginu [honzapowers](https://github.com/MedniLedved/honzapower
 
 ## Jak ji použít
 1. Na GitHubu klikni na **Use this template** → **Create a new repository**. Nastav **Private**.
-2. V novém repu otevři `pravidla.md`, smaž komentář a napiš vlastní pravidla (jedno na řádek). Limit je **800 znaků** mimo komentáře `<!-- … -->` (komentář může být i na řádku s pravidlem, text mimo něj se zachová). V `.claude-plugin/plugin.json` a `marketplace.json` přepiš jméno autora na své.
-3. Na claude.ai: Customize → Plugins → Add → **Add marketplace** → tvoje nové repo, zapni **Sync automatically** a povol `honzapowers-osobni`.
+2. V novém repu otevři `pravidla.md`, smaž komentář a napiš vlastní pravidla (jedno na řádek). Limit je **800 znaků** mimo komentáře `<!-- … -->` (komentář může být i na řádku s pravidlem, text mimo něj se zachová). V `.claude-plugin/plugin.json` a `marketplace.json` nahraď `TVOJE-JMENO` svým jménem nebo přezdívkou.
+3. Na claude.ai: Customize → Plugins → Add → **Add marketplace** → tvoje nové repo, zapni **Sync automatically** a povol `honzapowers-osobni`. Repo je soukromé, takže claude.ai k němu potřebuje přístup: musíš mít na claude.ai připojený GitHub, jinak přidání marketplace selže.
 4. Nové session pak začnou blokem `Personal rules (honzapowers-osobni):` s tvými pravidly.
 
 Dokud je v `pravidla.md` jen komentář nebo nic, plugin nic nevloží.
+
+Testovací workflow v `.github/workflows/` běží jen ve zdrojové šabloně. Ve tvém repu se joby přeskočí, takže ti nespotřebují minuty GitHub Actions. Můžeš ho i smazat.
 
 ## Co patří do pravidel
 Jen to, co platí napříč všemi tvými projekty (např. výběr modelu, styl odpovědí). Projektová pravidla patří do `CLAUDE.md` / `AGENTS.md` projektu a mají přednost.
@@ -23,3 +25,6 @@ claude plugin validate --strict .
 ```
 
 Hook je bash skript spouštěný přes `hooks/run-hook.cmd`, takže funguje i na Windows s Git Bash. Je jen pro čtení, nepoužívá síť a vždy končí s kódem 0.
+
+## Licence
+MIT, viz [`LICENSE`](LICENSE).
