@@ -12,6 +12,11 @@ Dokud je v `pravidla.md` jen komentář nebo nic, plugin nic nevloží.
 
 Testovací workflow v `.github/workflows/` běží jen ve zdrojové šabloně. Ve tvém repu se joby přeskočí, takže ti nespotřebují minuty GitHub Actions. Můžeš ho i smazat.
 
+## Ochrana větve `main` ve tvém repu
+Hook z tvého repa běží u tebe v každé session, proto má smysl `main` chránit: GitHub → Settings → Rules → Rulesets → New branch ruleset, cíl `main`, **Enforcement status: Active** (nový ruleset je jinak vypnutý), zapni **Restrict deletions** a **Block force pushes**, případně **Require a pull request before merging**. **Povinné kontroly (required status checks) nepřidávej:** joby z `test.yml` se ve tvém repu přeskočí, takže by nic nehlídaly, a kontrola pojmenovaná podle varianty matice by zůstala čekat a blokovala by každý PR.
+
+Na bezplatném účtu rulesety v soukromém repu nejsou k dispozici (jen ve veřejném nebo na placeném plánu). Pak ochrana není, takže si na `main` nepushuj s `--force`.
+
 ## Co patří do pravidel
 Jen to, co platí napříč všemi tvými projekty (např. výběr modelu, styl odpovědí). Projektová pravidla patří do `CLAUDE.md` / `AGENTS.md` projektu a mají přednost.
 
