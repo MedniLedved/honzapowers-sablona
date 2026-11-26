@@ -82,6 +82,20 @@ done
 out="$(run_hook "$T/pr.md")"
 case "$out" in *'Personal lessons file'*) fail "bez poznatky.md: řádek vložen" ;; *) pass "bez poznatky.md žádný řádek" ;; esac
 
+echo "Přehled poznatků: hlavička v jiném zápisu není záznam, odsazený řádek ano"
+printf '| Datum | spouštěč | řešení |\n|---|---|---|\n' >"$T/poz-h2.md"
+printf '|datum|spouštěč|řešení|\n|---|---|---|\n' >"$T/poz-h3.md"
+for f in poz-h2 poz-h3; do
+  out="$(run_hook "$T/pr.md" "$T/$f.md")"
+  case "$out" in *'Personal lessons file'*) fail "$f: hlavička počítána jako záznam" ;; *) pass "$f: hlavička není záznam" ;; esac
+done
+printf '| datum | spouštěč |\n|---|---|\n  | 2026-11-26 | chyba |\n' >"$T/poz-i.md"
+printf '<!-- c --> | 2026-11-26 | chyba |\n' >"$T/poz-c2.md"
+for f in poz-i poz-c2; do
+  out="$(run_hook "$T/pr.md" "$T/$f.md")"
+  case "$out" in *'Personal lessons file'*) pass "$f: záznam rozpoznán" ;; *) fail "$f: záznam nerozpoznán" ;; esac
+done
+
 echo "Přehled poznatků: prázdná nebo chybějící pravidla, platný JSON jen s řádkem"
 for pr in "$T/empty.md" ""; do
   out="$(run_hook "$pr" "$T/poz.md")"

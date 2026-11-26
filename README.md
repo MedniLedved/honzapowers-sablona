@@ -8,7 +8,7 @@ Osobní vrstva k pluginu [honzapowers](https://github.com/MedniLedved/honzapower
 3. Na claude.ai: Customize → Plugins → Add → **Add marketplace** → tvoje nové repo, zapni **Sync automatically** a povol `honzapowers-osobni`. Repo je soukromé, takže claude.ai k němu potřebuje přístup: musíš mít na claude.ai připojený GitHub, jinak přidání marketplace selže.
 4. Nové session pak začnou blokem `Personal rules (honzapowers-osobni):` s tvými pravidly.
 
-Dokud je v `pravidla.md` jen komentář nebo nic, plugin nic nevloží.
+Dokud je v `pravidla.md` jen komentář nebo nic, blok pravidel se nevloží. Samostatně hook přidá řádek s cestou k `poznatky.md`, až tabulka v něm bude mít záznam (viz „Přehled poznatků“).
 
 Testovací workflow v `.github/workflows/` běží jen ve zdrojové šabloně. Ve tvém repu se joby přeskočí, takže ti nespotřebují minuty GitHub Actions. Můžeš ho i smazat.
 

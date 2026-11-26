@@ -62,11 +62,13 @@ body="${body%"${body##*[![:space:]]}"}"
 has_lessons=0
 strip_comments "$LESSONS"
 while IFS= read -r line; do
+  line="${line#"${line%%[![:space:]]*}"}"
   case "$line" in
     '|'*)
       t="${line//[|:[:space:]-]/}"
       [ -z "$t" ] && continue
-      case "$line" in '| datum'*) continue ;; esac
+      flat="${line//[[:space:]]/}"
+      case "$flat" in '|datum'* | '|Datum'* | '|DATUM'*) continue ;; esac
       has_lessons=1; break ;;
   esac
 done <<<"$stripped"
