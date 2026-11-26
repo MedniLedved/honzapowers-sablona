@@ -20,6 +20,12 @@ Na bezplatném účtu rulesety v soukromém repu nejsou k dispozici (jen ve veř
 ## Co patří do pravidel
 Jen to, co platí napříč všemi tvými projekty (např. výběr modelu, styl odpovědí). Projektová pravidla patří do `CLAUDE.md` / `AGENTS.md` projektu a mají přednost.
 
+## Přehled poznatků
+Soubor `poznatky.md` je tvůj osobní přehled obecných poznatků napříč projekty. Je to tabulka `| datum | spouštěč | řešení | třída | projekty (štítky) | stav |`, jeden poznatek na řádek, bez jmen projektů a soukromých údajů (jen štítky). Dokud tabulka nemá řádek, nic se nevloží. Jakmile ho má, přidá hook do kontextu jeden řádek `Personal lessons file (read on demand): <cesta>`: obsah souboru se nikdy nevkládá, skill `retro` nebo `handover` z pluginu `honzapowers` si ho přečte, až když ho potřebuje. Nové řádky skill jen navrhne jako diff a zapíšou se po tvém schválení.
+
+## Aktualizace existující kopie
+Šablona se do už vytvořených kopií sama nepropisuje. Ve svém soukromém repu zkopíruj ze šablony `hooks/session-start` a `poznatky.md` (pokud tam ještě není) a verzi z `.claude-plugin/plugin.json` i `.claude-plugin/marketplace.json` (nech si své jméno místo `TVOJE-JMENO`). Pak commit a push; claude.ai změnu převezme díky **Sync automatically**.
+
 ## Vývoj
 ```bash
 bash tests/run-tests.sh

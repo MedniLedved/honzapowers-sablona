@@ -7,8 +7,8 @@
   "plugins": [
     {
       "name": "honzapowers-osobni",
-      "description": "Personal rules layer for honzapowers: injects your own short rules file (pravidla.md) at session start.",
-      "version": "0.2.0",
+      "description": "Personal rules layer for honzapowers: injects your own short rules file (pravidla.md) at session start and, if poznatky.md has entries, the path of that lessons file.",
+      "version": "0.3.0",
       "source": "./",
       "author": {
         "name": "TVOJE-JMENO"
