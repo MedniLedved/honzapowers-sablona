@@ -6,11 +6,12 @@ fails=0
 pass() { echo "  [PASS] $1"; }
 fail() { echo "  [FAIL] $1"; fails=$((fails + 1)); }
 
-run_hook() { # $1 = soubor pravidla.md; kopie pluginu v tmp
+run_hook() { # $1 = pravidla.md (volitelné), $2 = poznatky.md (volitelné); kopie pluginu v tmp
   local d; d="$(mktemp -d)"
   mkdir -p "$d/hooks"
   cp "$ROOT/hooks/session-start" "$d/hooks/"
-  cp "$1" "$d/pravidla.md"
+  [ -n "${1:-}" ] && cp "$1" "$d/pravidla.md"
+  [ -n "${2:-}" ] && cp "$2" "$d/poznatky.md"
   bash "$d/hooks/session-start" </dev/null
   rm -rf "$d"
 }
@@ -62,6 +63,46 @@ d="$(mktemp -d)"; mkdir -p "$d/hooks"; cp "$ROOT/hooks/session-start" "$d/hooks/
 out="$(bash "$d/hooks/session-start" </dev/null)"; rc=$?
 [ -z "$out" ] && [ "$rc" -eq 0 ] && pass "bez souboru: prázdno, kód 0" || fail "bez souboru: rc=$rc out=$out"
 rm -rf "$d"
+
+echo "Přehled poznatků: vloží se jen cesta, ne obsah"
+printf '<!-- popis -->\n| datum | spouštěč | řešení | třída | projekty (štítky) | stav |\n|---|---|---|---|---|---|\n| 2026-11-26 | ZZTOKEN chyba | oprava | general | a, b | candidate |\n' >"$T/poz.md"
+printf 'M1 test pravidlo\n' >"$T/pr.md"
+out="$(run_hook "$T/pr.md" "$T/poz.md")"
+case "$out" in *'Personal lessons file (read on demand): '*'/poznatky.md'*) pass "řádek s cestou k poznatky.md" ;; *) fail "chybí řádek s cestou: $out" ;; esac
+case "$out" in *ZZTOKEN*) fail "obsah poznatky.md prosákl do kontextu" ;; *) pass "obsah poznatky.md se nevkládá" ;; esac
+case "$out" in *'M1 test pravidlo'*) pass "pravidla zůstala vedle řádku" ;; *) fail "pravidla chybí: $out" ;; esac
+
+echo "Přehled poznatků: bez řádku tabulky se nevloží nic"
+printf '<!-- jen popis -->\n' >"$T/poz-c.md"
+printf '| datum | spouštěč | řešení | třída | projekty (štítky) | stav |\n|---|---|---|---|---|---|\n' >"$T/poz-h.md"
+for f in poz-c poz-h; do
+  out="$(run_hook "$T/pr.md" "$T/$f.md")"
+  case "$out" in *'Personal lessons file'*) fail "$f: řádek vložen bez záznamu" ;; *) pass "$f: bez záznamu žádný řádek" ;; esac
+done
+out="$(run_hook "$T/pr.md")"
+case "$out" in *'Personal lessons file'*) fail "bez poznatky.md: řádek vložen" ;; *) pass "bez poznatky.md žádný řádek" ;; esac
+
+echo "Přehled poznatků: hlavička v jiném zápisu není záznam, odsazený řádek ano"
+printf '| Datum | spouštěč | řešení |\n|---|---|---|\n' >"$T/poz-h2.md"
+printf '|datum|spouštěč|řešení|\n|---|---|---|\n' >"$T/poz-h3.md"
+for f in poz-h2 poz-h3; do
+  out="$(run_hook "$T/pr.md" "$T/$f.md")"
+  case "$out" in *'Personal lessons file'*) fail "$f: hlavička počítána jako záznam" ;; *) pass "$f: hlavička není záznam" ;; esac
+done
+printf '| datum | spouštěč |\n|---|---|\n  | 2026-11-26 | chyba |\n' >"$T/poz-i.md"
+printf '<!-- c --> | 2026-11-26 | chyba |\n' >"$T/poz-c2.md"
+for f in poz-i poz-c2; do
+  out="$(run_hook "$T/pr.md" "$T/$f.md")"
+  case "$out" in *'Personal lessons file'*) pass "$f: záznam rozpoznán" ;; *) fail "$f: záznam nerozpoznán" ;; esac
+done
+
+echo "Přehled poznatků: prázdná nebo chybějící pravidla, platný JSON jen s řádkem"
+for pr in "$T/empty.md" ""; do
+  out="$(run_hook "$pr" "$T/poz.md")"
+  case "$out" in *'Personal lessons file'*) pass "pravidla '${pr##*/}': řádek je" ;; *) fail "pravidla '${pr##*/}': chybí řádek: $out" ;; esac
+  case "$out" in *'Personal rules'*) fail "pravidla '${pr##*/}': blok pravidel bez textu" ;; *) pass "pravidla '${pr##*/}': bez prázdného bloku pravidel" ;; esac
+  printf '%s' "$out" | python3 -I -c 'import json,sys;json.load(sys.stdin)' && pass "platný JSON" || fail "neplatný JSON"
+done
 
 echo "Limit 800 znaků (ASCII)"
 printf 'x%.0s' $(seq 1 900) >"$T/long.md"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # SessionStart hook for honzapowers-osobni.
-# Injects pravidla.md under a fixed heading. HTML comments (<!-- ... -->) are
+# Injects pravidla.md under a fixed heading and, when poznatky.md has a table
+# row, one line with its path (never its content). HTML comments (<!-- ... -->) are
 # ignored; if nothing else is left, nothing is injected. Read-only, no network,
 # always exits 0.
 set -u
@@ -11,48 +12,70 @@ trap 'exit 0' EXIT
 MAX_CHARS=800
 SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 FILE="${SCRIPT_DIR%/*}/pravidla.md"
-[ -f "$FILE" ] || exit 0
+LESSONS="${SCRIPT_DIR%/*}/poznatky.md"
 
-body=""
-in_comment=0
-while IFS= read -r line || [ -n "$line" ]; do
-  line="${line%$'\r'}"
-  touched=0
-  while :; do
-    if [ "$in_comment" -eq 1 ]; then
-      touched=1
-      case "$line" in
-        *'-->'*) line="${line#*-->}"; in_comment=0 ;;
-        *) line=""; break ;;
-      esac
-    else
-      case "$line" in
-        *'<!--'*)
-          touched=1
-          pre="${line%%<!--*}"
-          rest="${line#*<!--}"
-          case "$rest" in
-            *'-->'*) line="$pre${rest#*-->}" ;;
-            *) line="$pre"; in_comment=1; break ;;
-          esac
-          ;;
-        *) break ;;
-      esac
-    fi
-  done
-  # a line that held only comment text leaves nothing behind
-  if [ "$touched" -eq 1 ] && [ -z "${line//[[:space:]]/}" ]; then continue; fi
-  body+="$line"$'\n'
-done <"$FILE"
+# strip_comments FILE: sets $stripped to the file text without <!-- ... -->
+strip_comments() {
+  stripped=""
+  [ -f "$1" ] || return 0
+  local line touched pre rest in_comment=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%$'\r'}"
+    touched=0
+    while :; do
+      if [ "$in_comment" -eq 1 ]; then
+        touched=1
+        case "$line" in
+          *'-->'*) line="${line#*-->}"; in_comment=0 ;;
+          *) line=""; break ;;
+        esac
+      else
+        case "$line" in
+          *'<!--'*)
+            touched=1
+            pre="${line%%<!--*}"
+            rest="${line#*<!--}"
+            case "$rest" in
+              *'-->'*) line="$pre${rest#*-->}" ;;
+              *) line="$pre"; in_comment=1; break ;;
+            esac
+            ;;
+          *) break ;;
+        esac
+      fi
+    done
+    # a line that held only comment text leaves nothing behind
+    if [ "$touched" -eq 1 ] && [ -z "${line//[[:space:]]/}" ]; then continue; fi
+    stripped+="$line"$'\n'
+  done <"$1"
+}
+
+strip_comments "$FILE"
+body="$stripped"
 
 # trim surrounding whitespace
 body="${body#"${body%%[![:space:]]*}"}"
 body="${body%"${body##*[![:space:]]}"}"
-[ -n "$body" ] || exit 0
+
+# poznatky.md counts only when it holds at least one table row (not the header
+# and not the separator). Its content is never injected, only its path.
+has_lessons=0
+strip_comments "$LESSONS"
+while IFS= read -r line; do
+  line="${line#"${line%%[![:space:]]*}"}"
+  case "$line" in
+    '|'*)
+      t="${line//[|:[:space:]-]/}"
+      [ -z "$t" ] && continue
+      flat="${line//[[:space:]]/}"
+      case "$flat" in '|datum'* | '|Datum'* | '|DATUM'*) continue ;; esac
+      has_lessons=1; break ;;
+  esac
+done <<<"$stripped"
 
 # Limit in characters. With a UTF-8 locale ${#body} counts characters; in a
 # byte locale the cut could split a multibyte character, so drop the partial tail.
-if [ "${#body}" -gt "$MAX_CHARS" ]; then
+if [ -n "$body" ] && [ "${#body}" -gt "$MAX_CHARS" ]; then
   body="${body:0:$MAX_CHARS}"
   if [ "${#probe}" -ne 1 ]; then
     while [ -n "$body" ]; do
@@ -66,7 +89,13 @@ if [ "${#body}" -gt "$MAX_CHARS" ]; then
   fi
 fi
 
-context="Personal rules (honzapowers-osobni):"$'\n'"$body"
+context=""
+[ -n "$body" ] && context="Personal rules (honzapowers-osobni):"$'\n'"$body"
+if [ "$has_lessons" -eq 1 ]; then
+  [ -n "$context" ] && context+=$'\n'
+  context+="Personal lessons file (read on demand): $LESSONS"
+fi
+[ -n "$context" ] || exit 0
 
 s="$context"
 s="${s//\\/\\\\}"
